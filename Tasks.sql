@@ -15,10 +15,8 @@ SELECT * FROM BKPF;
 SELECT * FROM BSEG;
 SELECT * FROM RSEG;
 
--- Homework A table that will give me fields from Invoice header and amount WRBTR_CONVERTED
+-- Homework : A table that will give me fields from Invoice header and amount WRBTR_CONVERTED
 
-SELECT A.BELNR, A.WAERS, B.DMBTR, C.WRBTR * 1 AS WRBTR_CONVERTED  -- Invoice number, currency, amounts
-FROM BKPF AS A                                                    -- Accounting document header
-JOIN BSEG AS B ON A.MANDT = B.MANDT AND A.BELNR = B.BELNR         -- Line items
-JOIN RSEG AS C ON A.MANDT = C.MANDT AND A.BELNR = C.BELNR;        -- MM invoice table
-
+-- WRBTR_CONVERTED (in BSEG table) & invoice header()
+SELECT SAMNR, REBZZ, SAKNR, AUFNR, LIFNR, SHKZG, CPUDT, WRBTR_CONVERTED 
+FROM BKPF AS BK JOIN BSEG BS ON BK.MANDT = BS.MANDT AND BK.BELNR = BS.BELNR;
