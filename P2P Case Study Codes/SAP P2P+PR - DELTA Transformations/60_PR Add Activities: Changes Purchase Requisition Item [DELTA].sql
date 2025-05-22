@@ -1,0 +1,135 @@
+
+INSERT INTO _CEL_PR_CDHDR_ACTIVITIES_DELTA (
+	_CASE_KEY
+	,MANDT
+	,BANFN
+	,BNFPO
+	,ACTIVITY_DE
+	,ACTIVITY_EN
+	,EVENTTIME
+	,_SORTING
+    ,USER_NAME 
+    ,USER_TYPE
+    ,CHANGED_TABLE
+	,CHANGED_FIELD
+	,CHANGED_FROM
+	,CHANGED_TO
+	,CHANGED_FROM_FLOAT
+	,CHANGED_TO_FLOAT
+	,CHANGE_NUMBER
+	,TRANSACTION_CODE
+    ,_ACTIVITY_KEY)
+
+SELECT DISTINCT
+	EBAN.MANDT || EBAN.BANFN || EBAN.BNFPO AS _CASE_KEY
+	,EBAN.MANDT AS MANDT
+	,EBAN.BANFN AS BANFN
+	,EBAN.BNFPO AS BNFPO
+	,CASE
+		--Löschung bzw Reaktivierung
+		WHEN CHANGES.FNAME = 'LOEKZ' AND CHANGES.VALUE_NEW = 'X' THEN 'Lösche BANF'
+		WHEN CHANGES.FNAME = 'LOEKZ' AND CHANGES.VALUE_NEW IS NULL THEN 'Löschung BANF aufheben'
+		--BANF Menge
+		WHEN CHANGES.FNAME = 'MENGE' THEN 'Ändere BANF Menge'
+		--Preisänderungen 
+		WHEN CHANGES.FNAME = 'PREIS' THEN 'Ändere BANF-Bestellpreis'		
+		--BANF erledigt
+		WHEN CHANGES.FNAME = 'EBAKZ' AND CHANGES.VALUE_NEW='H' THEN 'Schließe BANF ab'
+	    -- Release / Refuse
+		WHEN CHANGES.FNAME = 'FRGKZ' THEN 'Ändere BANF Freigabe'
+        -- Material
+        WHEN CHANGES.FNAME = 'MATNR' THEN 'Ändere BANF-Material'
+    	WHEN CHANGES.FNAME = 'KONNR' THEN 'Ändere Vertrag'
+		WHEN CHANGES.FNAME = 'KTPNR' THEN 'Ändere Vertrag'
+    	--Price Contract 
+    	-- Description
+        WHEN CHANGES.FNAME = 'TXZ01' THEN 'Ändere Short Text Description'
+        -- Materialeinheit
+        WHEN CHANGES.FNAME = 'MEINS' THEN 'Ändere BANF-Materialeinheit'
+        -- Geplantes Lieferdatum
+        WHEN CHANGES.FNAME = 'LFDAT' THEN 'Ändere BANF Lieferdatum'
+		-- Lagerort 
+		WHEN CHANGES.FNAME = 'LGORT' THEN 'Ändere BANF Lagerort'
+		-- Einkaufsorganisation 
+		WHEN CHANGES.FNAME = 'EKORG' THEN 'Ändere BANF Einkaufsorganisation'
+		-- Einkaufsgruppe 
+		WHEN CHANGES.FNAME = 'EKGRP' THEN 'Ändere BANF Einkaufsgruppe'
+		-- Währung 
+		WHEN CHANGES.FNAME = 'WAERS' THEN 'Ändere BANF Währung'
+		-- Lieferant
+		WHEN CHANGES.FNAME = 'LIFNR' THEN 'Ändere BANF Lieferant'
+		-- Planlieferzeit
+		WHEN CHANGES.FNAME = 'PLIFZ' THEN 'Ändere Planlieferzeit'
+        ELSE 'Änderung der Spalte ' || CHANGES.FNAME || ' (BANF)'
+	END AS ACTIVITY_DE
+	,CASE
+    	--delete or recovery
+    	WHEN CHANGES.FNAME = 'LOEKZ' AND CHANGES.VALUE_NEW = 'X' THEN 'Delete PR item'
+    	WHEN CHANGES.FNAME = 'LOEKZ' AND CHANGES.VALUE_NEW IS NULL THEN 'Recover PR item'
+    	--PR quantity
+    	WHEN CHANGES.FNAME = 'MENGE' THEN 'Change PR Quantity'
+    	--Price change 
+    	WHEN CHANGES.FNAME = 'PREIS' THEN 'Change PR Price'
+    	--Finish PR
+    	WHEN CHANGES.FNAME = 'EBAKZ' AND CHANGES.VALUE_NEW='H' THEN 'Close PR item'
+    	-- Release / Refuse
+        WHEN CHANGES.FNAME = 'FRGKZ' THEN 'Change PR Release'
+    	-- Material
+        WHEN CHANGES.FNAME = 'MATNR' THEN 'Change PR Material'
+    	-- Description
+    	WHEN CHANGES.FNAME = 'KONNR' THEN 'Change Contract'
+		WHEN CHANGES.FNAME = 'KTPNR' THEN 'Change Contract'
+    	--Price Contract 
+        WHEN CHANGES.FNAME = 'TXZ01' THEN 'Change Short Text Description'
+        -- Material Unit
+        WHEN CHANGES.FNAME = 'MEINS' THEN 'Change PR Material Unit'
+        -- Scheduled delivery date
+        WHEN CHANGES.FNAME = 'LFDAT' THEN 'Change PR Item Delivery Date'
+    	-- Storage location 
+    	WHEN CHANGES.FNAME = 'LGORT' THEN 'Change PR Storage Location'
+    	-- Purchase Organization 
+		WHEN CHANGES.FNAME = 'EKORG' THEN 'Change PR Purchasing Org'
+		-- Purchase Group 
+		WHEN CHANGES.FNAME = 'EKGRP' THEN 'Change PR Purchase Group'
+		-- Währung 
+		WHEN CHANGES.FNAME = 'WAERS' THEN 'Change PR Currency'
+		-- Vendor
+		WHEN CHANGES.FNAME = 'LIFNR' THEN 'Change PR Vendor'
+		-- Pl. Deliv. Time
+		WHEN CHANGES.FNAME = 'PLIFZ' THEN 'Change Pl. Deliv. Time'
+    	ELSE 'Change of Column' || CHANGES.FNAME || '(PR)'
+    END AS ACTIVITY_EN
+	,CAST(CHANGES.UDATE AS DATE) + CAST(CHANGES.UTIME AS TIME) AS EVENTTIME
+	,250 AS _SORTING
+  ,CHANGES.USERNAME AS USER_NAME
+  ,USR02.USTYP AS USER_TYPE
+  ,CHANGES.TABNAME AS CHANGED_TABLE
+	,CHANGES.FNAME AS CHANGED_FIELD
+	,CHANGES.VALUE_OLD AS CHANGED_FROM
+	,CHANGES.VALUE_NEW ASCHANGED_TO
+	,CASE
+	    WHEN CHANGES.FNAME = 'PREIS' THEN CAST(CHANGES.VALUE_OLD AS FLOAT)
+	    ELSE CAST(NULL AS FLOAT)
+	END AS CHANGED_FROM_FLOAT
+	,CASE
+	    WHEN CHANGES.FNAME = 'PREIS' THEN CAST(CHANGES.VALUE_NEW AS FLOAT)
+	    ELSE CAST(NULL AS FLOAT)
+	END AS CHANGED_FROM_FLOAT
+	,CHANGES.CHANGENR AS CHANGE_NUMBER
+	,CHANGES.TCODE AS TRANSACTION_CODE
+  ,CHANGES.MANDANT || CHANGES.OBJECTCLAS || CHANGES.OBJECTID || CHANGES.CHANGENR AS _ACTIVITY_KEY
+FROM 
+	EBAN AS EBAN 
+		JOIN TMP_PR_CDHDR_CDPOS AS CHANGES ON 1=1 
+		AND EBAN.MANDT = CHANGES.MANDANT
+		AND	EBAN.MANDT || EBAN.BANFN || EBAN.BNFPO  = CHANGES.TABKEY
+		AND CHANGES.OBJECTCLAS = 'BANF'
+		AND CHANGES.CHNGIND = 'U'	--UPDATED
+		AND CHANGES.TABNAME = 'EBAN'	
+    AND (CHANGES.FNAME IN ('EBAKZ','LOEKZ','MENGE','PREIS','MATNR', 'TXZ01', 'KONNR','KTPNR', 'MEINS','LFDAT','LGORT','EKORG','EKGRP','WAERS','LIFNR','PLIFZ')
+		OR (CHANGES.FNAME='BANPR' AND (CHANGES.VALUE_NEW='2' OR CHANGES.VALUE_NEW='H')))
+      LEFT JOIN USR02 AS USR02 ON 1=1 
+		AND CHANGES.MANDANT = USR02.MANDT
+		AND CHANGES.USERNAME = USR02.BNAME
+ ;
+ 
