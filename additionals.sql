@@ -45,5 +45,5 @@ FROM
                     WHERE 
                         NEW_ACTIVITIES._ACTIVITY_KEY=OLD_ACTIVITIES._ACTIVITY_KEY
                         AND NEW_ACTIVITIES.ACTIVITY_EN=OLD_ACTIVITIES.ACTIVITY_EN
-                    )
+ )
 ;
