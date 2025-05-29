@@ -34,7 +34,14 @@ NOT IN ( 33. VARIABLE_AUTO_TYPES ) ) = 0 THEN 1.0 ELSE 0.0 END)*100
 Formula: AVG(CALC_THROUGHPUT(CASE_START TO 
 CASE_END, REMAP_TIMESTAMPS("_CEL_O2C_ACTIVITIES"."EVENTTIME", HOURS))/24)
 
-6. 
+6.  Unbilled Unbilled delivery item net amount (converted)
+
+  SUM(
+  CASE
+    WHEN "o_celonis_DeliveryItem"."BillingStatus" IN ('UNBILLED_PAST_DUE', 'UNBILLED_AGED')
+    THEN "o_celonis_DeliveryItem"."NetAmountConverted"
+  END
+)
 
 *******************************************************************************************************************************************************************
 
