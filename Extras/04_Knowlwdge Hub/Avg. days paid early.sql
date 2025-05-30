@@ -1,3 +1,9 @@
+Pseudo-code
+Average of (
+    If cleared documents = 0 or cleared before/baseline date, then NULL
+    Else, calculate the number of days between baseline date + net document payment term and clearing date
+)
+
 AVG(
   CASE
     WHEN "o_celonis_VendorAccountCreditItem"."isRelevantAndCleared"= 0
