@@ -1,0 +1,384 @@
+				
+			PURCHASE TO PAY 
+
+***************************************************************************
+
+Activity table :
+
+INSERT INTO _CEL_P2P_ACTIVITIES
+(
+      _CASE_KEY
+    , _ACTIVITY_EN
+    , _EVENTTIME
+    , _SORTING
+)
+
+Activity 1 : Create Purchase Requisition Item 
+
+SELECT
+    EKPO.MANDT || EKPO.EBELN || EKPO.EBELP AS _CASE_KEY
+    ,'Create Purchase Requisition Item' AS _ACTIVITY_EN
+    ,EBAN.BADAT AS _EVENTTIME
+    ,10 AS _SORTING
+FROM EKPO
+JOIN EKKO ON 1=1
+    AND EKPO.MANDT = EKKO.MANDT
+    AND EKPO.EBELN = EKKO.EBELN
+    AND EKKO.BSTYP = 'F'
+JOIN EBAN ON 1=1
+    AND EKPO.MANDT = EBAN.MANDT
+    AND EKPO.BANFN = EBAN.BANFN
+    AND EKPO.BNFPO = EBAN.BNFPO
+;
+
+
+Activity 2 : Create Purchase Order Item
+
+SELECT
+    EKPO.MANDT || EKPO.EBELN || EKPO.EBELP AS _CASE_KEY
+    ,'Create Purchase Order Item' AS _ACTIVITY_EN
+    ,EKKO.AEDAT AS _EVENTTIME
+    ,20 AS _SORTING
+FROM EKPO
+JOIN EKKO ON 1=1
+    AND EKPO.MANDT = EKKO.MANDT
+    AND EKPO.EBELN = EKKO.EBELN
+    AND EKKO.BSTYP = 'F'
+;
+
+
+Activity 3 : Change Price
+
+INSERT INTO _CEL_P2P_ACTIVITIES ("_CASE_KEY", "_ACTIVITY_EN", "_EVENTTIME", "_SORTING")
+
+SELECT
+    "EKPO"."MANDT" || "EKPO"."EBELN" || "EKPO"."EBELP" AS "_CASE_KEY",
+    'Change Price' AS "_ACTIVITY_EN",
+    CAST("CDHDR"."UDATE" AS DATE) + CAST("CDHDR"."UTIME" AS TIME) AS "_EVENTTIME",
+    25 AS "_SORTING"
+FROM "EKPO"
+JOIN "EKKO" ON 1=1
+    AND "EKPO"."MANDT" = "EKKO"."MANDT"
+    AND "EKPO"."EBELN" = "EKKO"."EBELN"
+    AND "EKKO"."BSTYP" = 'F'
+JOIN "CDPOS" ON 1=1
+    AND "CDPOS"."TABNAME" = 'EKPO'
+    AND "CDPOS"."TABKEY" = "EKPO"."MANDT" || "EKPO"."EBELN" || "EKPO"."EBELP"
+    AND "CDPOS"."FNAME" = 'NETPR'
+JOIN "CDHDR" ON 1=1
+    AND "CDHDR"."MANDANT" = "CDPOS"."MANDANT"
+    AND "CDPOS"."CHANGENR" = "CDHDR"."CHANGENR"
+    AND "CDPOS"."OBJECTCLAS" = "CDHDR"."OBJECTCLAS"
+    AND "CDPOS"."OBJECTID" = "CDHDR"."OBJECTID"
+;
+
+
+Activity 4 : Change Quantity
+
+INSERT INTO _CEL_P2P_ACTIVITIES ("_CASE_KEY", "_ACTIVITY_EN", "_EVENTTIME", "_SORTING")
+
+SELECT
+    "EKPO"."MANDT" || "EKPO"."EBELN" || "EKPO"."EBELP" AS "_CASE_KEY",
+    'Change Quantity' AS "_ACTIVITY_EN",
+    CAST("CDHDR"."UDATE" AS DATE) + CAST("CDHDR"."UTIME" AS TIME) AS "_EVENTTIME",
+    25 AS "_SORTING"
+FROM "EKPO"
+JOIN "EKKO" ON 1=1
+    AND "EKPO"."MANDT" = "EKKO"."MANDT"
+    AND "EKPO"."EBELN" = "EKKO"."EBELN"
+    AND "EKKO"."BSTYP" = 'F'
+JOIN "CDPOS" ON 1=1
+    AND "CDPOS"."TABNAME" = 'EKPO'
+    AND "CDPOS"."TABKEY" = "EKPO"."MANDT" || "EKPO"."EBELN" || "EKPO"."EBELP"
+    AND "CDPOS"."FNAME" = 'MENGE'
+JOIN "CDHDR" ON 1=1
+    AND "CDHDR"."MANDANT" = "CDPOS"."MANDANT"
+    AND "CDPOS"."CHANGENR" = "CDHDR"."CHANGENR"
+    AND "CDPOS"."OBJECTCLAS" = "CDHDR"."OBJECTCLAS"
+    AND "CDPOS"."OBJECTID" = "CDHDR"."OBJECTID"
+;
+
+
+
+Activity 5 : Vendor creates invoice
+
+SELECT
+    BSEG.MANDT || BSEG.BUKRS || BSEG.BELNR || BSEG.GJAHR || BSEG.BUZEI AS _CASE_KEY,  -- Unique identifier for the case
+    'Vendor creates invoice' AS _ACTIVITY_EN,                                         -- Activity description
+    BKPF.BLDAT AS _EVENTTIME,                                                         -- Document date as event timestamp
+    0 AS _SORTING                                                                     -- Sorting order
+FROM
+    BSEG AS BSEG
+JOIN
+    BKPF AS BKPF
+    ON  BSEG.MANDT = BKPF.MANDT
+    AND BSEG.BUKRS = BKPF.BUKRS
+    AND BSEG.BELNR = BKPF.BELNR
+    AND BSEG.GJAHR = BKPF.GJAHR
+
+    -- Filter conditions specific to this activity
+    AND BSEG.BSCHL = '31'             -- Posting key for vendor invoice
+    AND BKPF.BLDAT IS NOT NULL        -- Ensure event time is available
+;
+
+
+
+Activity 6 : Enter Invoice in SAP
+
+
+SELECT
+    BSEG.MANDT || BSEG.BUKRS || BSEG.BELNR || BSEG.GJAHR || BSEG.BUZEI AS _CASE_KEY,  
+    'Enter Invoice in SAP' AS _ACTIVITY_EN,                                           
+    CAST(BKPF.CPUDT AS TIMESTAMP) + CAST(BKPF.CPUTM AS INTERVAL HOUR TO SECOND) AS _EVENTTIME, 
+    10 AS _SORTING                                                                    
+FROM
+    BSEG AS BSEG
+JOIN
+    BKPF AS BKPF
+    ON  BSEG.MANDT = BKPF.MANDT
+    AND BSEG.BUKRS = BKPF.BUKRS
+    AND BSEG.BELNR = BKPF.BELNR
+    AND BSEG.GJAHR = BKPF.GJAHR
+
+    -- Filter conditions
+    AND BSEG.BSCHL = '31'                -- Posting key for vendor invoice
+    AND BKPF.CPUDT IS NOT NULL           -- Ensure document date exists
+    AND BKPF.CPUTM IS NOT NULL           -- Ensure document time exists
+;
+
+
+
+Activity 7 :  Set & Remove Payment Block Activities 
+
+INSERT INTO _CEL_AP_ACTIVITIES ("_CASE_KEY", "_ACTIVITY_EN", "_EVENTTIME", "_SORTING")
+
+SELECT
+    "BSEG"."MANDT" || "BSEG"."BUKRS" || "BSEG"."BELNR" || "BSEG"."GJAHR" || "BSEG"."BUZEI" AS "_CASE_KEY",
+    
+    CASE
+        WHEN "CDPOS"."VALUE_NEW" IS NULL THEN 'Remove payment block'
+        WHEN "CDPOS"."VALUE_OLD" IS NULL THEN 'Set payment block'
+    END AS "_ACTIVITY_EN",
+    
+    CAST("CDHDR"."UDATE" AS DATE) + CAST("CDHDR"."UTIME" AS TIME) AS "_EVENTTIME",
+    
+    CASE
+        WHEN "CDPOS"."VALUE_OLD" IS NULL THEN 20
+        WHEN "CDPOS"."VALUE_NEW" IS NULL THEN 30
+    END AS "_SORTING"
+
+FROM "BSEG"
+JOIN "BKPF" ON 1=1
+    AND "BSEG"."MANDT" = "BKPF"."MANDT"
+    AND "BSEG"."BUKRS" = "BKPF"."BUKRS"
+    AND "BSEG"."BELNR" = "BKPF"."BELNR"
+    AND "BSEG"."GJAHR" = "BKPF"."GJAHR"
+
+JOIN "CDPOS" ON 1=1
+    AND "CDPOS"."TABNAME" = 'BSEG'
+    AND "CDPOS"."TABKEY" = "BSEG"."MANDT" || "BSEG"."BUKRS" || "BSEG"."BELNR" || "BSEG"."GJAHR" || "BSEG"."BUZEI"
+    AND "CDPOS"."FNAME" = 'ZLSPR'
+    AND ("CDPOS"."VALUE_NEW" IS NULL OR "CDPOS"."VALUE_OLD" IS NULL)
+
+JOIN "CDHDR" ON 1=1
+    AND "CDHDR"."MANDANT" = "CDPOS"."MANDANT"
+    AND "CDPOS"."CHANGENR" = "CDHDR"."CHANGENR"
+    AND "CDPOS"."OBJECTCLAS" = "CDHDR"."OBJECTCLAS"
+    AND "CDPOS"."OBJECTID" = "CDHDR"."OBJECTID"
+
+WHERE "BSEG"."BSCHL" = '31'
+;
+
+
+Activity 8 : Clear Invoice
+
+
+INSERT INTO _CEL_AP_ACTIVITIES ("_CASE_KEY", "_ACTIVITY_EN", "_EVENTTIME", "_SORTING")
+
+SELECT
+    "BSEG"."MANDT" || "BSEG"."BUKRS" || "BSEG"."BELNR" || "BSEG"."GJAHR" || "BSEG"."BUZEI" AS "_CASE_KEY",
+    'Clear invoice' AS "_ACTIVITY_EN",
+    "BSEG"."AUGDT" AS "_EVENTTIME",
+    40 AS "_SORTING"
+FROM "BSEG"
+JOIN "BKPF" ON 1=1
+    AND "BSEG"."MANDT" = "BKPF"."MANDT"
+    AND "BSEG"."BUKRS" = "BKPF"."BUKRS"
+    AND "BSEG"."BELNR" = "BKPF"."BELNR"
+    AND "BSEG"."GJAHR" = "BKPF"."GJAHR"
+
+    AND "BSEG"."BSCHL" = '31'
+    AND "BSEG"."AUGDT" IS NOT NULL
+;
+ 
+
+Activity 9 : Due Date Expired
+
+
+INSERT INTO _CEL_AP_ACTIVITIES ("_CASE_KEY", "_ACTIVITY_EN", "_EVENTTIME", "_SORTING")
+
+SELECT
+    "BSEG"."MANDT" || "BSEG"."BUKRS" || "BSEG"."BELNR" || "BSEG"."GJAHR" || "BSEG"."BUZEI" AS "_CASE_KEY",
+    'Due Date Expired' AS "_ACTIVITY_EN",
+    CAST(
+        CASE
+            WHEN "BSEG"."ZBD3T" > 0 THEN "BSEG"."ZFBDT" + "BSEG"."ZBD3T"
+            WHEN "BSEG"."ZBD2T" > 0 THEN "BSEG"."ZFBDT" + "BSEG"."ZBD2T"
+            WHEN "BSEG"."ZBD1T" > 0 THEN "BSEG"."ZFBDT" + "BSEG"."ZBD1T"
+            ELSE "BSEG"."ZFBDT"
+        END
+    AS DATE) + CAST('000000' AS TIME) AS "_EVENTTIME",
+    50 AS "_SORTING"
+FROM "BSEG"
+JOIN "BKPF" ON 1=1
+    AND "BSEG"."MANDT" = "BKPF"."MANDT"
+    AND "BSEG"."BUKRS" = "BKPF"."BUKRS"
+    AND "BSEG"."BELNR" = "BKPF"."BELNR"
+    AND "BSEG"."GJAHR" = "BKPF"."GJAHR"
+    AND "BSEG"."BSCHL" = '31'
+    AND "BSEG"."ZFBDT" IS NOT NULL
+;
+
+
+
+**************************************************************************************
+
+
+		Creating Additional tables and extending fields:
+
+1. FOR EKPO :
+
+
+DROP TABLE IF EXISTS P2P_EKPO;
+
+CREATE TABLE "P2P_EKPO" AS (
+
+SELECT
+"EKPO".*,
+"EKPO". "MANDT" || "EKPO"."EBELN" || "EKPO"."EBELP" AS "_CASE_KEY"
+
+FROM EKPO
+JOIN EKKO ON 1=1
+AND EKPO.MANDT = EKKO.MANDT
+AND EKPO.EBELN = EKKO.EBELN
+AND EKKO.BSTYP = 'F'
+
+);
+
+
+****************************************************************************************************************************
+
+Accounts Payable :
+
+🥇Duplicate Checker: Detect and prevent payments of duplicate invoices
+🥇Open Credit Memos: Detect aging credit memos and avoid expiration by linking them to open Invoices
+🥇Payment Terms Checker: Detect deviations on incoming invoices and proactively suggest favorable terms
+🥇Currency Checker: Detect and resolve infrequently or incorrectly used currencies
+🥇Baseline Date Optimization: Suggest baseline date updates in the event of late invoice receipt, late goods receipt, etc. to 	optimize working capital
+🥇Parked & Blocked Invoices: Prioritize and resolve payment blocks on incoming invoices to realize cash discounts
+	Touchless Invoice Ingestion: ML-based extraction of data from invoice documents
+
+
+Accounts Receivable :
+
+🥇Unearned Cash Discount: Leverage a purpose-built solution that flags customers taking unearned cash discounts
+🥇Payment terms optimization: Improve DSO by identifying invoices utilizing non-standard payment terms
+🥇Collections: Collect from a central application with a prioritized worklist and customer overviews
+🥇Credit Management: Manage credit risk with smart limits, real-time credit risk monitoring and integrated third-party data
+🥇Dispute Management: Streamline dispute resolution with centralized tracking and intelligent workflows
+🥇Cash Application: Simplify and automate common manual steps and ensure accurate cash application.
+
+
+Order Management : 
+
+🥇Shipped, Not Invoiced: Identify & invoice orders that have not been billed after shipping
+🥇Unshipped Orders: Identify & ship orders that have not been goods issued and are blocking space in your warehouse
+🥇Unallocated Orders: Identify & allocate stock to orders that have not been confirmed yet to avoid customer order rejections
+🥇Open Order Processing: Detect value opportunities within order processing and prioritize action based on urgency
+🥇Shipping Emissions Reduction: Calculate carbon emissions, simulate carbon savings based on transport modes, and take 	actions to reduce emissions.
+
+
+Procurement :
+
+🥇Payment Terms Harmonizer: Gain data-driven insights from combined transactional and master data to optimize negotiation strategies for payment terms with suppliers
+🥇Contract Leakage: Speed up purchase requisition processing time by using Celonis’ contract recommendations and optimize 	cost on item level
+🥇Inflation Monitor: Detect price variation of materials and suggest action to reduce its impact
+🥇Open PR Processing: Detect value opportunities within PR processing and prioritize action based on urgency
+🥇Open PO Processing: Detect value opportunities within PO processing and prioritize action based on urgency
+🥇🥇Sustainable Spend: Integrate supplier sustainability ratings to manage sustainable spend
+🥇Material Emission: Automate measurement of purchased material emissions and prioritize reduction initiatives
+🥇Free-Text Requisitions: Speed up free-text requisition processing time by using Celonis’ ML-driven material recommendations 	and optimizing item-level cost.
+
+Inventory Management :
+
+🥇Customer Consignment Stock: For an IM and OM persona to surface and reduce overdue customer consignment stock and 	proactively manage stock levels
+🥇Material Shortage: Detect materials at risk of stock out and mitigate the impact on open orders
+🥇Inventory Projection: Improve demand alignment with stock development and material movement data
+🥇Master Data Improvement: Improve safety stock and reorder points with intelligent recommendations
+🥇Control Center: Review supply chain metrics in real-time and find inefficiencies by inventory classification.
+
+
+<%= ButtonDrilldown1 == '"KNA1"."NAME1"'?'#{Customers}': ButtonDrilldown1 == '"VBAP"."MATNR" || \' - \' || "VBAP"."MATNR_TEXT"'?'#{Materials}': ButtonDrilldown1 == '"VBAK"."VKORG_TEXT"'?'#{"VBAK"."VKORG_TEXT"}': ButtonDrilldown1 == '"VBAK"."BUKRS_VF" || \' - \' || "VBAK"."BUKRS_TEXT"'?'Company Code': ButtonDrilldown1 == '"VBAP"."WERKS_TEXT"'?'Plant': ButtonDrilldown1 == 'CASE WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \>= 0 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \<= 100 THEN \'a) 0 - 100€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \> 100 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \<= 500 THEN \'b) 100 - 500€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \> 500 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \<= 1000 THEN \'c) 500 - 1.000€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \> 1000 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") \<= 10000 THEN \'d) 1.000 - 10.000€\'  ELSE \'e) \> 10.000€\' END'?'Net Order Value': ButtonDrilldown1 == '"VBAK"."VTWEG" || \' - \' || "VBAK"."VTWEG_TEXT"'?'Distribution Channel': ''%>
+
+
+ button dropdown:
+
+<%=  
+ButtonDrilldown1 == '"KNA1"."NAME1"'  
+  ? '#{Customers}'  
+: ButtonDrilldown1 == '"VBAP"."MATNR" || \' - \' || "VBAP"."MATNR_TEXT"'  
+  ? '#{Materials}'  
+: ButtonDrilldown1 == '"VBAK"."VKORG_TEXT"'  
+  ? '#{Sales Organization}'  
+: ButtonDrilldown1 == '"VBAK"."BUKRS_VF" || \' - \' || "VBAK"."BUKRS_TEXT"'  
+  ? 'Company Code'  
+: ButtonDrilldown1 == '"VBAP"."WERKS_TEXT"'  
+  ? 'Plant'  
+: ButtonDrilldown1 == 'CASE WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") >= 0 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 100 THEN \'a) 0 - 100€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 100 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 500 THEN \'b) 100 - 500€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 500 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 1000 THEN \'c) 500 - 1.000€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 1000 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 10000 THEN \'d) 1.000 - 10.000€\'  ELSE \'e) > 10.000€\' END'  
+  ? 'Net Order Value'  
+: ButtonDrilldown1 == '"VBAK"."VTWEG" || \' - \' || "VBAK"."VTWEG_TEXT"'  
+  ? 'Distribution Channel'  
+: ''  
+%>
+
+Main Table :
+
+#{SOItems} #{by} 
+<%=  
+  ButtonDrilldown1 == '"KNA1"."NAME1"' 
+    ? '#{Customers}'  
+  : ButtonDrilldown1 == 'COALESCE("VBAP"."MATNR_TEXT", "VBAP"."MATNR")' 
+    ? '#{Materials}'  
+  : ButtonDrilldown1 == '"VBAK"."VKORG_TEXT"' 
+    ? '#{Sales Organization}'  
+  : ButtonDrilldown1 == '"VBAK"."BUKRS_VF" || \' - \' || "VBAK"."BUKRS_TEXT"' 
+    ? 'Company Code'  
+  : ButtonDrilldown1 == '"VBAP"."WERKS_TEXT"' 
+    ? 'Plant'  
+  : ButtonDrilldown1 == 'CASE WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") >= 0 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 100 THEN \'a) 0 - 100€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 100 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 500 THEN \'b) 100 - 500€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 500 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 1000 THEN \'c) 500 - 1.000€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 1000 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 10000 THEN \'d) 1.000 - 10.000€\'  ELSE \'e) > 10.000€\' END' 
+    ? 'Net Order Value'  
+  : ButtonDrilldown1 == '"VBAK"."VTWEG" || \' - \' || "VBAK"."VTWEG_TEXT"' 
+    ? 'Distribution Channel'  
+  : ''  
+%>
+
+
+Main Table Sub title:
+
+<%=
+  ButtonDrilldown1 == '"KNA1"."NAME1"' 
+    ? '#{Customers}' 
+  : ButtonDrilldown1 == 'COALESCE("VBAP"."MATNR_TEXT", "VBAP"."MATNR")' 
+    ? '#{Materials}' 
+  : ButtonDrilldown1 == '"VBAK"."VKORG_TEXT"' 
+    ? '#{Sales Organization}' 
+  : ButtonDrilldown1 == '"VBAK"."BUKRS_VF" || \' - \' || "VBAK"."BUKRS_TEXT"' 
+    ? 'Company Code' 
+  : ButtonDrilldown1 == '"VBAP"."WERKS_TEXT"' 
+    ? 'Plant' 
+  : ButtonDrilldown1 == 'CASE WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") >= 0 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 100 THEN \'a) 0 - 100€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 100 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 500 THEN \'b) 100 - 500€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 500 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 1000 THEN \'c) 500 - 1.000€\'  WHEN PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") > 1000 AND PU_SUM("VBAK","VBAP"."NETWR_CONVERTED") <= 10000 THEN \'d) 1.000 - 10.000€\'  ELSE \'e) > 10.000€\' END' 
+    ? 'Net Order Value' 
+  : ButtonDrilldown1 == '"VBAK"."VTWEG" || \' - \' || "VBAK"."VTWEG_TEXT"' 
+    ? 'Distribution Channel' 
+  : '' 
+%>
