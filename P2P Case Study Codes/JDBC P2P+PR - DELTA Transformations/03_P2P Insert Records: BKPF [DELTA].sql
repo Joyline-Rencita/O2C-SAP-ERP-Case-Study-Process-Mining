@@ -1,0 +1,74 @@
+DELETE FROM "BKPF"
+WHERE EXISTS (SELECT 1 FROM BKPF_DELTA as NEW_DATA 
+              WHERE BKPF.MANDT = NEW_DATA.MANDT 
+              AND BKPF.BUKRS = NEW_DATA.BUKRS
+			  AND BKPF.BELNR = NEW_DATA.BELNR
+              AND BKPF.GJAHR = NEW_DATA.GJAHR 
+              );
+
+INSERT INTO "BKPF"
+    (MANDT,
+    BUKRS,
+    BELNR,
+    GJAHR,
+    BLART,
+    BLDAT,
+    BUDAT,
+    CPUDT,
+    CPUTM,
+    AEDAT,
+    UPDDT,
+    WWERT,
+    USNAM,
+    TCODE,
+    XBLNR,
+    STBLG,
+    STJAH,
+    WAERS,
+    AWTYP,
+    AWKEY,
+    STODT,
+    XREVERSAL,
+    REINDAT,    
+    VATDATE,
+    INTDATE,
+    PSOBT,
+    PSODT,
+    PSOTM,
+    OFFSET_REFER_DAT,
+    _CELONIS_CHANGE_DATE)
+SELECT
+    MANDT,
+    BUKRS,
+    BELNR,
+    GJAHR,
+    BLART,
+    BLDAT,
+    BUDAT,
+    CPUDT,
+    CPUTM,
+    AEDAT,
+    UPDDT,
+    WWERT,
+    USNAM,
+    TCODE,
+    XBLNR,
+    STBLG,
+    STJAH,
+    WAERS,
+    AWTYP,
+    AWKEY,
+    STODT,
+    XREVERSAL,
+    REINDAT,    
+    VATDATE,
+    INTDATE,
+    PSOBT,
+    PSODT,
+    PSOTM,
+    OFFSET_REFER_DAT,
+    _CELONIS_CHANGE_DATE
+FROM 
+    BKPF_DELTA ;
+
+SELECT ANALYZE_STATISTICS ('BKPF');
