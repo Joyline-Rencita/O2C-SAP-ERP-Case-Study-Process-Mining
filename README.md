@@ -1,4 +1,4 @@
-# O2C Deviations Dashboard
+# O2C Case Study Dashboard:
 
 ## Overview:
 The Order-to-Cash (O2C) Deviations Dashboard provides insights into deviations within the O2C process, helping users analyze, understand, and act upon areas where process deviations impact performance. This document outlines the data requirements, dashboard components, and expected functionalities to support effective analysis and management of O2C deviations.
