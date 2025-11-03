@@ -9,7 +9,7 @@ The Order-to-Cash (O2C) Deviations Dashboard provides insights into deviations w
 ![Screenshot (1227)](https://github.com/user-attachments/assets/d64ae125-35ba-46b6-b2a1-05bd7d0753c0)
 ![Screenshot (940)](https://github.com/user-attachments/assets/f83eaea7-583c-4b9c-9fb7-0f210453ef06)
 ![Screenshot (1224)](https://github.com/user-attachments/assets/a36b90ea-cf44-4f6f-a100-71455cc5fbc5)
+<img width="1920" height="855" alt="Screenshot (1262)" src="https://github.com/user-attachments/assets/df9db262-896c-498b-ad7a-fce71e769952" />
 <img width="1920" height="882" alt="Screenshot (1240)" src="https://github.com/user-attachments/assets/548f29eb-ea26-42b8-9e7f-1212f3742732" />
-
 ![Screenshot (1208)](https://github.com/user-attachments/assets/f66d586c-d2f9-4fb5-8ac6-efd49ebff365)
 ![Screenshot (955)](https://github.com/user-attachments/assets/3c1487ce-0a53-4172-9ec0-edcc7d7c4c90)
